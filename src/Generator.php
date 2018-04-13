@@ -38,6 +38,18 @@ class Generator implements GeneratorInterface
     protected $types = array();
 
     /**
+     * An array of Method objects
+     *
+     * @var Method[]
+     */
+    protected $methods = array();
+
+    /**
+     * An array of Method key
+     */
+    protected $methodKeys = array();
+
+    /**
      * This is the object that holds the current config
      *
      * @var ConfigInterface
@@ -121,6 +133,11 @@ class Generator implements GeneratorInterface
 
         foreach ($this->wsdl->getOperations() as $function) {
             $this->log('Loading function ' . $function->getName());
+
+            $name = $function->getName();
+            $returns = $function->getReturns();
+            $this->methods[$name] = new Method($name,$returns);
+            $this->methodKeys[$returns] = $name;
 
             $this->service->addOperation(new Operation($function->getName(), $function->getParams(), $function->getDocumentation(), $function->getReturns()));
         }
@@ -217,6 +234,14 @@ class Generator implements GeneratorInterface
         // Generate all type classes
         $types = array();
         foreach ($filteredTypes as $type) {
+            $name = $type->getIdentifier();
+
+            if(array_key_exists($name,$this->methods)){
+                $this->methods[$name]->setParamsIn($type->getMembers());
+            }else if(array_key_exists($name,$this->methodKeys)){
+                $this->methods[$this->methodKeys[$name]]->setParamsOut($type->getMembers());
+            }
+
             $class = $type->getClass();
             if ($class != null) {
                 $types[] = $class;
@@ -245,5 +270,13 @@ class Generator implements GeneratorInterface
     public function setLogger(LoggerInterface $logger)
     {
         $this->logger = $logger;
+    }
+
+    /**
+     * @return Method[]
+     */
+    public function getMethods(): array
+    {
+        return $this->methods;
     }
 }
