@@ -1,40 +1,9 @@
-# wsdl2phpgenerator
-[![Latest Stable Version](https://poser.pugx.org/wsdl2phpgenerator/wsdl2phpgenerator/v/stable.png)](https://packagist.org/packages/wsdl2phpgenerator/wsdl2phpgenerator)
-[![Build Status](https://travis-ci.org/wsdl2phpgenerator/wsdl2phpgenerator.svg?branch=master)](https://travis-ci.org/wsdl2phpgenerator/wsdl2phpgenerator)
-[![Code Coverage](https://scrutinizer-ci.com/g/wsdl2phpgenerator/wsdl2phpgenerator/badges/coverage.png?s=91798255fd973950b1e2d7478f99d6f6f80cf6da)](https://scrutinizer-ci.com/g/wsdl2phpgenerator/wsdl2phpgenerator/)
-[![Scrutinizer Quality Score](https://scrutinizer-ci.com/g/wsdl2phpgenerator/wsdl2phpgenerator/badges/quality-score.png?s=23e602a86f75a79a2f1013caac99558f2464ce74)](https://scrutinizer-ci.com/g/wsdl2phpgenerator/wsdl2phpgenerator/)
-[![Dependency Status](https://www.versioneye.com/user/projects/52697615632bac67b2002e93/badge.png)](https://www.versioneye.com/user/projects/52697615632bac67b2002e93)
-
-Simple WSDL to PHP classes converter. Takes a WSDL file and outputs class files ready to use.
-
-Uses the [MIT license](http://www.opensource.org/licenses/mit-license.php).
-
-> **Announcement**: We are looking to add one or two co-maintainers with commit access to help bring this project forward, review pull requests and respond to issues. If you have contributed to this project or are otherwise actively involved in open source and have a GitHub profile for review, ping [@kasperg](https://github.com/kasperg) to express your interest.
-
-## New major version: 3.0
-
-A new major version of wsdl2phpgenerator has recently been released: 3.0.
-
-This introduces changes to both configuration and generated code. The changes makes it more flexible to use, easier to include in other projects, promotes contributions and reduces maintenance.
-
-2.x users are encourage to read [a walkthrough of what is new in 3.0](docs/whats-new-in-3.0.md).
-
-## Contributors
-Originally developed by [@walle](https://github.com/walle) and includes bug fixes and improvements from [@vakopian](https://github.com/vakopian), [@statikbe](https://github.com/statikbe/), [@ecolinet](https://github.com/ecolinet), [@nuth](https://github.com/nuth/), [@chriskl](https://github.com/chriskl/), [@RSully](https://github.com/RSully/), [@jrbasso](https://github.com/jrbasso/), [@dypa](https://github.com/dypa/), [@Lafriks](https://github.com/Lafriks/), [@SamMousa](https://github.com/SamMousa/), [@xstefanox](https://github.com/xstefanox/), [@garex](https://github.com/garex/), [@honzap](https://github.com/honzap/), [@jk](https://github.com/jk/), [@sheeep](https://github.com/sheeep/), [@colinodell](https://github.com/colinodell/), [@red-led](https://github.com/red-led/), [@ivol84](https://github.com/ivol84/), [@wasinger](https://github.com/wasinger/), [@devlead](https://github.com/devlead/), [@NoUseFreak](https://github.com/nousefreak/), [@HighOnMikey](https://github.com/highonmikey/), [@theHarvester](https://github.com/theHarvester), [@fduch](https://github.com/fduch), [@methodin](https://github.com/methodin), [@nkm](https://github.com/nkm/), [@jongotlin](https://github.com/jongotlin/), [@yethee](https://github.com/yethee/), [@rindeal](https://github.com/rindeal/), [@vtsao](https://github.com/vtsao/), [@xoeoro](https://github.com/xoeoro/), [@lunetics](https://github.com/lunetics/), [@peter-vanpoucke](https://github.com/peter-vanpoucke/), [@jabiinfante](https://github.com/jabiinfante/), [@renatomefi](https://github.com/renatomefi/)
-and [@kasperg](https://github.com/kasperg/).
-
-Pull requests are very welcome. Please read [our guidelines for contributing](https://github.com/wsdl2phpgenerator/wsdl2phpgenerator/blob/master/CONTRIBUTING.md).
-
-## Mailing list
-
-There is a mailing list for the project at [https://groups.google.com/forum/#!forum/wsdl2phpgenerator](https://groups.google.com/forum/#!forum/wsdl2phpgenerator)
-
 ## Installation
 
 Add wsdl2phpgenerator to your [Composer](https://getcomposer.org/doc/00-intro.md) project:
 
 ```bash
-composer require wsdl2phpgenerator/wsdl2phpgenerator
+composer require dhcmediway/wsdl2phpgenerator
 ```
 
 The project will also be available as [a command line application](https://github.com/wsdl2phpgenerator/wsdl2phpgenerator-cli) which can be downloaded as a phar file.
