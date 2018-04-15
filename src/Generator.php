@@ -279,4 +279,18 @@ class Generator implements GeneratorInterface
     {
         return $this->methods;
     }
+
+    /**
+     * @return null|Service
+     */
+    public function getService(){
+        return $this->service;
+    }
+
+    public function getDefinition(){
+        return [
+            'methods'=>$this->getMethods(),
+            'service'=>$this->service->getIdentifier(),
+        ];
+    }
 }
