@@ -16,6 +16,7 @@ use Wsdl2PhpGenerator\ConfigInterface;
  */
 class Config implements ConfigInterface
 {
+    const WS_SECURITY_NAMESPACE = 'http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd';
     /**
      * @var array The actual key/value pairs.
      */
@@ -74,7 +75,9 @@ class Config implements ConfigInterface
             'constructorParamsDefaultToNull' => false,
             'soapClientClass'               => '\SoapClient',
             'soapClientOptions'             => array(),
-            'proxy'                         => false
+            'proxy'                         => false,
+            'wsSecurity'                    => false,
+            'outputFile'                    => 'wsdl.xml'
         ));
 
         // A set of configuration options names and normalizer callables.
@@ -83,6 +86,8 @@ class Config implements ConfigInterface
             'operationNames' => array($this, 'normalizeArray'),
             'soapClientOptions' => array($this, 'normalizeSoapClientOptions'),
             'proxy' => array($this, 'normalizeProxy'),
+            'wsSecurity' => array($this, 'normalizeWsSecurity'),
+            'outputFile' => array($this,'normalizeOutPutFile')
         );
         // Convert each callable to a closure as that is required by OptionsResolver->setNormalizer().
         $normalizers = array_map(function ($callable) {
@@ -210,6 +215,55 @@ class Config implements ConfigInterface
         // Make sure port is an integer
         $value['proxy_port'] = intval($value['proxy_port']);
 
+        return $value;
+    }
+
+
+    /**
+     * Normalize the wsSecurity configuration option.
+     *
+     * The normalized value is an array with the following keys:
+     * - namespace (optional)
+     * - username
+     * - password
+     *
+     * @param Options $options
+     * @param string|array $value The value to be normalized
+     *
+     * @return array|bool The normalized value.
+     */
+    protected function normalizeWsSecurity(Options $options, $value)
+    {
+        if (!$value) {
+            // wsSecurity setting is optional
+            return false;
+        }
+       if(is_array($value)) {
+            if (empty($value['username']) || empty($value['password'])) {
+                throw new InvalidOptionsException(
+                    '"wsSecurity" configuration setting must contain at least keys "username" and "password'
+                );
+            }
+
+            if(empty($value['namespace'])){
+                $value['namespace'] = self::WS_SECURITY_NAMESPACE;
+            }
+        } else {
+            throw new InvalidOptionsException(
+                '"wsSecurity" configuration setting must be  an array containing at least a key "username" and "password"'
+            );
+        }
+        return $value;
+    }
+
+    protected function normalizeOutPutFile(Options $options,$value){
+        // make filename retionalise
+        $value = preg_replace("([^\w\-.])", '', $value);
+
+        // filename can not be empty
+        if (!$value) {
+            $value = 'wsdl.xml';
+        }
         return $value;
     }
 }
