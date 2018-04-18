@@ -13,9 +13,14 @@ namespace Wsdl2PhpGenerator;
 class Method implements \JsonSerializable
 {
     /**
-     * @var string The name of the request function
+     * @var string The name of the method
      */
-    private $request;
+    private $name;
+
+    /**
+     * @var string The name of the soapIn node
+     */
+    private $soapIn;
 
     /**
      * @var array An array with Variables
@@ -24,9 +29,9 @@ class Method implements \JsonSerializable
     private $paramsIn;
 
     /**
-     * @var string A description of the response function
+     * @var string A description of the soapOut node
      */
-    private $response;
+    private $soapOut;
 
     /**
      * @var array An array with Variables
@@ -35,31 +40,15 @@ class Method implements \JsonSerializable
 
     /**
      * Method constructor.
-     * @param string $request
-     * @param $response
+     * @param string $soapIn
+     * @param string $soapOut
      */
-    public function __construct($request, $response)
+    public function __construct($soapIn, $soapOut)
     {
-        $this->request = $request;
-        $this->response = $response;
+        $this->soapIn = $soapIn;
+        $this->soapOut = $soapOut;
     }
 
-
-    /**
-     * @return string
-     */
-    public function getRequest()
-    {
-        return $this->request;
-    }
-
-    /**
-     * @param string $request
-     */
-    public function setRequest(string $request)
-    {
-        $this->request = $request;
-    }
 
     /**
      * @return array
@@ -75,25 +64,42 @@ class Method implements \JsonSerializable
     public function setParamsIn(array $paramsIn)
     {
         foreach ($paramsIn as $param) {
-            $this->paramsIn[]=$param->getName();
+            $this->paramsIn[] = $param->getName();
         }
     }
 
     /**
      * @return string
      */
-    public function getResponse()
+    public function getSoapIn()
     {
-        return $this->response;
+        return $this->soapIn;
     }
 
     /**
-     * @param string $response
+     * @param $soapIn
      */
-    public function setResponse(string $response)
+    public function setSoapIn($soapIn)
     {
-        $this->response = $response;
+        $this->soapIn = $soapIn;
     }
+
+    /**
+     * @return string
+     */
+    public function getSoapOut()
+    {
+        return $this->soapOut;
+    }
+
+    /**
+     * @param $soapOut
+     */
+    public function setSoapOut($soapOut)
+    {
+        $this->soapOut = $soapOut;
+    }
+
 
     /**
      * @return array
@@ -109,9 +115,26 @@ class Method implements \JsonSerializable
     public function setParamsOut(array $paramsOut)
     {
         foreach ($paramsOut as $param) {
-            $this->paramsOut[]=$param->getName();
+            $this->paramsOut[] = $param->getName();
         }
     }
+
+    /**
+     * @return string
+     */
+    public function getName()
+    {
+        return $this->name;
+    }
+
+    /**
+     * @param $name
+     */
+    public function setName($name)
+    {
+        $this->name = $name;
+    }
+
 
     /**
      * Specify data which should be serialized to JSON
@@ -123,10 +146,11 @@ class Method implements \JsonSerializable
     public function jsonSerialize()
     {
         return [
-            'request' => $this->getRequest(),
-            'paramsIn' => $this->getParamsIn()??array(),
-            'response' => $this->getResponse(),
-            'paramsOut' => $this->getParamsOut()??array()
+            'name' => $this->getName(),
+            'soapIn' => $this->getSoapIn(),
+            'paramsIn' => $this->getParamsIn() ?? array(),
+            'soapOut' => $this->getSoapOut(),
+            'paramsOut' => $this->getParamsOut() ?? array()
         ];
     }
 }
