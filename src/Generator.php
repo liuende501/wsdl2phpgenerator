@@ -45,6 +45,13 @@ class Generator implements GeneratorInterface
     protected $methods = array();
 
     /**
+     * An array of Location objects
+     *
+     * @var Location[]
+     */
+    protected $locations = array();
+
+    /**
      * An array of Method key
      */
     protected $methodKeys = array();
@@ -74,8 +81,9 @@ class Generator implements GeneratorInterface
      * Generates php source code from a wsdl file
      *
      * @param ConfigInterface $config The config to use for generation
+     * @param bool $parseOnly
      */
-    public function generate(ConfigInterface $config)
+    public function generate(ConfigInterface $config, $parseOnly = false)
     {
         $this->config = $config;
 
@@ -87,12 +95,16 @@ class Generator implements GeneratorInterface
         if (empty($options['features']) ||
             (($options['features'] & SOAP_SINGLE_ELEMENT_ARRAYS) != SOAP_SINGLE_ELEMENT_ARRAYS)) {
             $message = array('SoapClient option feature SOAP_SINGLE_ELEMENT_ARRAYS is not set.',
-                             'This is not recommended as data types in DocBlocks for array properties will not be ',
-                             'valid if the array only contains a single value.');
+                'This is not recommended as data types in DocBlocks for array properties will not be ',
+                'valid if the array only contains a single value.');
             $this->log(implode(PHP_EOL, $message), 'warning');
         }
 
         $wsdl = $this->config->get('inputFile');
+        $outputDir = $this->config->get('outputDir');
+        $outputFile = $this->config->get('outputFile');
+        $this->config->set('outputPath', $outputDir . '/' . $outputFile);
+
         if (is_array($wsdl)) {
             foreach ($wsdl as $ws) {
                 $this->load($ws);
@@ -101,8 +113,13 @@ class Generator implements GeneratorInterface
             $this->load($wsdl);
         }
 
-        $this->savePhp();
+        if ($parseOnly) {
+            $this->setLocations($wsdl);
+            return;
+        }
 
+        $this->savePhp();
+        $this->saveWsdl($wsdl);
         $this->log('Generation complete', 'info');
     }
 
@@ -119,6 +136,7 @@ class Generator implements GeneratorInterface
 
         $this->loadTypes();
         $this->loadService();
+        $this->loadMethods();
     }
 
     /**
@@ -134,12 +152,12 @@ class Generator implements GeneratorInterface
         foreach ($this->wsdl->getOperations() as $function) {
             $this->log('Loading function ' . $function->getName());
 
-            $name = $function->getName();
-            $returns = $function->getReturns();
-            $this->methods[$name] = new Method($name,$returns);
-            $this->methodKeys[$returns] = $name;
-
-            $this->service->addOperation(new Operation($function->getName(), $function->getParams(), $function->getDocumentation(), $function->getReturns()));
+            $operation = new Operation($function->getName(), $function->getParams(), $function->getDocumentation(), $function->getReturns());
+            $name = $operation->getName();
+            $request = $operation->getParams()[$operation->getParamStringNoTypeHints()];
+            $returns = $operation->getReturns();
+            $this->methodKeys[$name] = ['soapIn' => $request, 'soapOut' => $returns];
+            $this->service->addOperation($operation);
         }
 
         $this->log('Done loading service ' . $service->getName());
@@ -175,10 +193,11 @@ class Generator implements GeneratorInterface
                     $nullable = $typeNode->isElementNillable($name) || $typeNode->getElementMinOccurs($name) === 0;
                     $type->addMember($typeName, $name, $nullable);
                 }
+
             } elseif ($enumValues = $typeNode->getEnumerations()) {
                 $type = new Enum($this->config, $typeNode->getName(), $typeNode->getRestriction());
                 array_walk($enumValues, function ($value) use ($type) {
-                      $type->addValue($value);
+                    $type->addValue($value);
                 });
             } elseif ($pattern = $typeNode->getPattern()) {
                 $type = new Pattern($this->config, $typeNode->getName(), $typeNode->getRestriction());
@@ -234,14 +253,6 @@ class Generator implements GeneratorInterface
         // Generate all type classes
         $types = array();
         foreach ($filteredTypes as $type) {
-            $name = $type->getIdentifier();
-
-            if(array_key_exists($name,$this->methods)){
-                $this->methods[$name]->setParamsIn($type->getMembers());
-            }else if(array_key_exists($name,$this->methodKeys)){
-                $this->methods[$this->methodKeys[$name]]->setParamsOut($type->getMembers());
-            }
-
             $class = $type->getClass();
             if ($class != null) {
                 $types[] = $class;
@@ -283,14 +294,83 @@ class Generator implements GeneratorInterface
     /**
      * @return null|Service
      */
-    public function getService(){
+    public function getService()
+    {
         return $this->service;
     }
 
-    public function getDefinition(){
+    public function getDefinition()
+    {
         return [
-            'methods'=>$this->getMethods(),
-            'service'=>$this->service->getIdentifier(),
+            'methods' => $this->getMethods(),
+            'locations' => $this->getLocations(),
+            'service' => $this->service->getIdentifier(),
         ];
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getLocations()
+    {
+        return $this->locations;
+    }
+
+    /**
+     * 列出可能的location
+     *
+     * @param $wsdl
+     */
+    public function setLocations($wsdl)
+    {
+        $data = @file_get_contents($wsdl);
+        if ($data) {
+            preg_match('/location=["\'](.*)["\']/', $data, $matches);
+            if (isset($matches[1])) {
+                $location = new Location($matches[1]);
+                $this->locations[] = $location;
+            }
+        }
+        if (filter_var($wsdl, FILTER_VALIDATE_URL)) {
+            $wsdl = preg_replace('/\?.*/', '', $wsdl);
+            $location = new Location($wsdl);
+            $this->locations[] = $location;
+        }
+    }
+
+    /**
+     * @param $wsdl
+     * @return string
+     */
+    public function saveWsdl($wsdl)
+    {
+        $outputPath = $this->config->get('outputPath');
+        if (filter_var($wsdl, FILTER_VALIDATE_URL)) {
+            // http请求
+            copy($wsdl, $outputPath);
+        } else {
+            // 上传文件
+            copy($wsdl, $outputPath);
+        }
+    }
+
+    /**
+     * Loads the method class
+     */
+    protected function loadMethods()
+    {
+        $types = $this->types;
+        foreach ($this->methodKeys as $key => $value) {
+            $inType = $value['soapIn'];
+            $outType = $value['soapOut'];
+            if (!array_key_exists($inType, $types) || !array_key_exists($outType, $types)) {
+                continue;
+            }
+            $method = new Method($inType, $outType);
+            $method->setParamsIn($types[$inType]->getMembers());
+            $method->setParamsOut($types[$outType]->getMembers());
+            $method->setName($key);
+            $this->methods[] = $method;
+        }
     }
 }
