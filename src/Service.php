@@ -20,7 +20,6 @@ use Wsdl2PhpGenerator\PhpSource\PhpVariable;
  */
 class Service implements ClassGenerator
 {
-
     /**
      * @var ConfigInterface
      */
@@ -164,8 +163,17 @@ class Service implements ClassGenerator
   }' . PHP_EOL;
         $source .= '  $options = array_merge(' . var_export($this->config->get('soapClientOptions'), true) . ', $options);' . PHP_EOL;
         $source .= '  if (!$wsdl) {' . PHP_EOL;
-        $source .= '    $wsdl = \'' . $this->config->get('inputFile') . '\';' . PHP_EOL;
+        $source .= '    $wsdl = \'' . $this->config->get('outputPath') . '\';' . PHP_EOL;
         $source .= '  }' . PHP_EOL;
+
+
+        $wsSecurity = $this->config->get('wsSecurity');
+        $wsFunc = 'setSoapHeader';
+
+        if($wsSecurity){
+            $source .= '  $this->'.$wsFunc.'('.var_export($wsSecurity,true).');' . PHP_EOL;
+        }
+
         $source .= '  parent::__construct($wsdl, $options);' . PHP_EOL;
 
         $function = new PhpFunction('public', '__construct', 'array $options = array(), $wsdl = null', $source, $comment);
@@ -203,7 +211,8 @@ class Service implements ClassGenerator
 
             $source = '  return $this->__soapCall(\'' . $operation->getName() . '\', array(' . $operation->getParamStringNoTypeHints() . '));' . PHP_EOL;
 
-            $paramStr = $operation->getParamString($this->types);
+//            $paramStr = $operation->getParamString($this->types);
+            $paramStr = $operation->getParamStringNoTypeHints();
 
             $function = new PhpFunction('public', $name, $paramStr, $source, $comment);
 
@@ -211,6 +220,33 @@ class Service implements ClassGenerator
                 $this->class->addFunction($function);
             }
         }
+
+        // Add WS-Security
+        if($wsSecurity){
+
+            $comment = new PhpDocComment('add ws-security header');
+
+            $comment->addParam(PhpDocElementFactory::getParam('array', 'wsSecurity', 'ws-security config'));
+
+            $source = '  $username = $wsSecurity[\'username\'];'.PHP_EOL;
+            $source .= '  $password = $wsSecurity[\'password\'];'.PHP_EOL;
+            $source .= '  $namespace = $wsSecurity[\'namespace\'];'.PHP_EOL;
+            $source .= '  $username = new \\SoapVar($username, XSD_STRING, null, null, \'Username\', $namespace);'.PHP_EOL;
+            $source .= '  $password = new \\SoapVar($password, XSD_STRING, null, null, \'Password\', $namespace);'.PHP_EOL;
+            $source .= '  $usernameToken = new \\SoapVar(array($username, $password), SOAP_ENC_OBJECT, null, null, \'UsernameToken\', $namespace);'.PHP_EOL;
+            $source .= '  $usernameToken = new \\SoapVar(array($usernameToken), SOAP_ENC_OBJECT, null, null, \'Security\', $namespace);'.PHP_EOL;
+            $source .= '  $wssTokenHeader = new \\SoapHeader($namespace, \'Security\', $usernameToken);'.PHP_EOL;
+            $source .= '  $this->__setSoapHeaders($wssTokenHeader);'.PHP_EOL;
+            
+            $paramStr = '$wsSecurity';
+
+            $function = new PhpFunction('private', $wsFunc, $paramStr, $source, $comment);
+
+            if ($this->class->functionExists($function->getIdentifier()) == false) {
+                $this->class->addFunction($function);
+            }
+        }
+
     }
 
     /**
